@@ -1,49 +1,79 @@
 // Login, register, forget password, reset password
 const express = require('express');
 const router = express.Router();
-const mongodb = require('mongodb');
-const mongoClient = mongodb.MongoClient;
-const dbName = 'todo';
-const conxURL = 'mongodb://localhost:27017';
+const userModel = require('./../models/user.model');
+const MAP_USER_REQUEST = require('./../helpers/map_user_request');
+const multer = require('multer');
+const path = require('path');
+const passwordHash = require('password-hash');
+const JWT = require('jsonwebtoken');
+const config = require('./../configs/index');
+
+// Creating token
+function CreateToken(data){
+    let token = JWT.sign({
+        _id: data.id
+    },config.JWT_SECRECT)
+    return token;
+}
+
+// Complete control of file upload
+const myStorage = multer.diskStorage({
+    destination: function(req,file,cb){
+        cb(null, path.join(process.cwd(),'uploads/images'))
+    },
+    filename: function(req,file,cb){
+        cb(null,file.originalname)
+    }
+})
+
+const upload = multer({
+    storage: myStorage
+})
 
 router.route('/login')
     .get()
     .post(function(req,res,next){
-        mongoClient.connect(conxURL, function(err,client){
-            if(err){
-                return next(err)
-            }
-            const db = client.db(dbName);
-            db.collection('users')
-                .find(req.body)
-                .toArray(function(err,users){
-                    if(err){
-                        return next(err)
-                    }
-                    res.json(users)
-                })
+        userModel.findOne({
+            username: req.body.username
         })
+            .then(function(user){
+                if(!user){
+                    return next({
+                        msg: 'Invalid Username',
+                        status: 400
+                    })
+                }
+                var isMatched = passwordHash.verify(req.body.password, user.password)
+                var token = CreateToken(user);
+                if(isMatched){
+                    res.json({
+                        user: user,
+                        token: token
+                    })
+                }
+            })
+            .catch(function(err){
+                next(err)
+            })
     })
 
 router.route('/register')
     .get()
-    .post(function(req,res,next){
-        mongoClient.connect(conxURL,function(err,client){
-            console.log('inside mongoclient')
+    .post(upload.single('image'),function(req,res,next){
+        console.log('req body>>', req.body)
+        console.log('req file>>', req.file)
+
+        var newUser = new userModel({});
+        var mappedUser = MAP_USER_REQUEST(newUser, req.body);
+        mappedUser.password = passwordHash.generate(req.body.password);
+
+        mappedUser.save(function(err,done){
+
             if(err){
-                return next(err)
+                return next(err);
             }
-            console.log('Inside mongoclient after the first error handler')
-            // Create
-            const db = client.db(dbName);
-            db.collection('users')
-                .insertOne(req.body)
-                    .then(function(response){
-                        res.json(response)
-                    })
-                    .catch(function(err){
-                        return next(err)
-                    })
+            res.json(done)
         })
     })
 

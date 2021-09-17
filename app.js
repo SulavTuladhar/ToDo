@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express(); // Entire express framework is avaliable in app
 const PORT = 9090;
+require('./db_init'); // Mongoose setup
 
 // Third party middleware
 const morgan = require('morgan');
@@ -20,16 +21,19 @@ app.use('/files', express.static('uploads'));
 // Importing routing level middleware
 const AuthRouter = require('./controller/auth.controller');
 const UserRouter = require('./controller/user.controller');
+const TasksRouter = require('./modules/tasks/tasks.route')
 
 // Importing application level middlware
 const isAdmin = require('./middlewares/isAdmin');
+const authenticate = require('./middlewares/authenticate');
 
 // Loading third party middleware
 app.use(morgan('dev'))
 
 //Loading routing level middlware
 app.use('/auth', AuthRouter);
-app.use('/user', UserRouter);
+app.use('/user', authenticate, UserRouter);
+app.use('task',authenticate, TasksRouter)
 
 // 404 error handler
 app.use(function(req,res,next){
