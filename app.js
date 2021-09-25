@@ -21,7 +21,7 @@ app.use('/files', express.static('uploads'));
 // Importing routing level middleware
 const AuthRouter = require('./controller/auth.controller');
 const UserRouter = require('./controller/user.controller');
-const TasksRouter = require('./modules/tasks/tasks.route')
+const ProjectRouter = require('./controller/project.controller');
 
 // Importing application level middlware
 const isAdmin = require('./middlewares/isAdmin');
@@ -33,12 +33,12 @@ app.use(morgan('dev'))
 //Loading routing level middlware
 app.use('/auth', AuthRouter);
 app.use('/user', authenticate, UserRouter);
-app.use('task',authenticate, TasksRouter)
+app.use('/project',authenticate, ProjectRouter);
 
 // 404 error handler
 app.use(function(req,res,next){
     next({
-        msg: 'Not Found',
+        msg: ' Ah! shit! Not Found',
         status: 404
     })
 })

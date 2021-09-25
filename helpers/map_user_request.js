@@ -26,6 +26,8 @@ module.exports = function(user, userData){
         user.address.permanentAddress = userData.permanentAddress;
     if(userData.gender)
         user.gender = userData.gender;
+    if(userData.image)
+        user.image = userData.image;
 
     return user
 }

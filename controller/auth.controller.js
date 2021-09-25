@@ -17,6 +17,17 @@ function CreateToken(data){
     return token;
 }
 
+// File filter
+function myFilter(req,file,cb){
+    var mimeType = file.mimetype.split('/')[0];
+    if(mimeType == 'image'){
+        cb(null, true)
+    }else{
+        req.fileTypeError = true;
+        cb(null. false)
+    }
+}
+
 // Complete control of file upload
 const myStorage = multer.diskStorage({
     destination: function(req,file,cb){
@@ -28,7 +39,8 @@ const myStorage = multer.diskStorage({
 })
 
 const upload = multer({
-    storage: myStorage
+    storage: myStorage,
+    fileFilter: myFilter
 })
 
 router.route('/login')
@@ -61,8 +73,18 @@ router.route('/login')
 router.route('/register')
     .get()
     .post(upload.single('image'),function(req,res,next){
-        console.log('req body>>', req.body)
-        console.log('req file>>', req.file)
+        // console.log('req body>>', req.body)
+        // console.log('req file>>', req.file)
+
+        if(req.file.fileTypeError){
+            return next({
+                msg: 'Invalid File Format',
+                sttsu: 414
+            })
+        }
+        if(req.file){
+            req.body.image = req.file.filename;
+        }
 
         var newUser = new userModel({});
         var mappedUser = MAP_USER_REQUEST(newUser, req.body);
