@@ -94,11 +94,34 @@ router.route('/')
     
     router.route('/:projectId/:todoId')
         .get(function(req,res,next){
-            todoModel.findById(req.params.todoId, function(err,todo){
+            todoModel.find({})
+                .exec(function(err,todo){
+                    if(err){
+                        return next(err)
+                    }
+                    res.json(todo)
+                })
+        })
+
+        .delete(function(req,res,next){
+            todoModel.findById(req.params.todoId,function(err,todo){
                 if(err){
                     return next(err)
                 }
-                res.json(todo)
+                if(!todo){
+                    return next({
+                        msg: 'Todo not Found',
+                        status: 404
+                    })
+                }
+                //TODO exists
+                todo.remove()
+                    .then(function(removed){
+                        res.json(removed)
+                    })
+                    .catch(function(err){
+                        return next(err)
+                    })
             })
         })
 
@@ -215,6 +238,7 @@ router.route('/')
             })
         })
         .delete(function(req,res,next){
+            // console.log("params ko id >>", req.params.id)
             projectModel.findById(req.params.id,function(err,project){
                 if(err){
                     return next(err)
@@ -225,14 +249,23 @@ router.route('/')
                         status: 404
                     })
                 }
-                // Project found now deleting
-                project.remove()
-                    .then(function(deleted){
-                        res.json(deleted)
+                // Project found now finding todo related to this project
+                todoModel.deleteMany({project: req.params.id}, function(err,todo){
+                   console.log("project is >>>>>", todo)
+                   if(err){
+                       return next(err);
+                   }
+                //    deleting todo first
+                
+                    project.remove(function(err,done){
+                        if(err){
+                            return next(err)
+                        }
                     })
-                    .catch(function(err){
-                        return next(err)
-                    })
+                    res.json(todo)
+                
+                   
+               })
             })
         })
     

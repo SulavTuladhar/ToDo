@@ -3,6 +3,8 @@ const app = express(); // Entire express framework is avaliable in app
 const PORT = 9090;
 require('./db_init'); // Mongoose setup
 
+const API_ROUTER = require('./api.route');
+
 // Third party middleware
 const morgan = require('morgan');
 
@@ -18,22 +20,11 @@ app.use(express.json()); //JSON parser
  
 app.use('/files', express.static('uploads')); 
 
-// Importing routing level middleware
-const AuthRouter = require('./controller/auth.controller');
-const UserRouter = require('./controller/user.controller');
-const ProjectRouter = require('./controller/project.controller');
-
-// Importing application level middlware
-const isAdmin = require('./middlewares/isAdmin');
-const authenticate = require('./middlewares/authenticate');
 
 // Loading third party middleware
 app.use(morgan('dev'))
 
-//Loading routing level middlware
-app.use('/auth', AuthRouter);
-app.use('/user', authenticate, UserRouter);
-app.use('/project',authenticate, ProjectRouter);
+app.use('/api', API_ROUTER);
 
 // 404 error handler
 app.use(function(req,res,next){
